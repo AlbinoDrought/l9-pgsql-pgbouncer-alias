@@ -1,0 +1,40 @@
+version: "2"
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=sample_db
+      - POSTGRES_USER=sample_user
+      - POSTGRES_PASSWORD=sample_password
+
+  pgbouncer:
+    image: bitnami/pgbouncer:1.17.0
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRESQL_USERNAME=sample_user
+      - POSTGRESQL_PASSWORD=sample_password
+      - POSTGRESQL_DATABASE=sample_db
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PORT=5432
+      - PGBOUNCER_PORT=15432
+      - PGBOUNCER_DATABASE=sample_db_web
+
+  app:
+    image: webdevops/php:8.1
+    depends_on:
+      - pgbouncer
+    environment:
+      - APP_KEY=base64:5h3OdOY3ULuZrr8NVe8AY7RRWCLqhkSe+ega4ZK4yPA=
+      - DB_CONNECTION=pgsql
+      - DB_HOST=pgbouncer
+      - DB_PORT=15432
+      - DB_USERNAME=sample_user
+      - DB_PASSWORD=sample_password
+      # this is actually the pgbouncer pool name, the database name is just "sample_db"
+      - DB_DATABASE=sample_db_web
+    volumes:
+      - ./laravel:/app
+      - ./migrate-twice.sh:/entrypoint.sh
+    working_dir: /app
+    entrypoint: [/entrypoint.sh]
